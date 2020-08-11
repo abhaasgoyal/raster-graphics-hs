@@ -38,7 +38,14 @@ areaToLabel css t = case t of
 
 -- TODO
 toolToLabel :: Tool -> String
-toolToLabel = undefined
+toolToLabel tool = case tool of
+  LineTool _ -> "Line... click-drag-release"
+  PolygonTool _ -> "Polygon... click 3 or more times then spacebar"
+  RectangleTool _ -> "Rectangle... click-drag-release"
+  CircleTool _ -> "Circle... click-drag-release"
+  EllipseTool _ -> "Ellipse... click-drag-release"
+  ParallelogramTool _ _ -> "Parallelogram... click two opposite vertices, then a third"
+  _ -> []
 
 -- TODO
 colourShapesToPicture :: [ColourShape] -> Picture
