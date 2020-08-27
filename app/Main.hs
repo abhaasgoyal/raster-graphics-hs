@@ -6,5 +6,7 @@ import Controller
 import Model
 import View
 
-main :: IO ()
+-- main :: IO ()
+-- main = drawingOf ((colourShapesToPicture mystery) & coordinatePlane)
+main :: IO()
 main = activityOf emptyModel handleEvent modelToPicture

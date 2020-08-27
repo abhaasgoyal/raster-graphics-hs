@@ -77,9 +77,15 @@ shapeToPicture shape = case shape of
   Line a b -> polyline [a,b]
   Polygon a -> solidPolygon a
   Circle (a,b) (c,d) -> translated a b (solidCircle (sqrt ( (a-c)^2 + (b-d)^2 )))
-  Rectangle (a,b) (c,d) rec_ang -> rotated rec_ang (translated ((a+c)/2) ((b+d)/2) (rectangle (abs (c-a))  (abs (d-b))))
-  Ellipse (a,b) (c,d) ell_ang -> rotated ell_ang (translated ((a+c)/2) ((b+d)/2)  (ellipse (a,b) (c,d)))
-  Parallelogram (x1,y1) (x2,y2) (x3,y3) -> polyline [(x1,y1),(x3,y3),(x2,y2),(x1+x2-x3,y1+y2-y3)]
+  Rectangle (a,b) (c,d) rec_ang -> translated ((a+c)/2) ((b+d)/2) (
+                                   rotated rec_ang (
+                                       solidRectangle (abs (c-a))  (abs (d-b))
+                                   ))
+  Ellipse (a,b) (c,d) ell_ang -> translated ((a+c)/2) ((b+d)/2) (
+                                  rotated ell_ang (
+                                      ellipse (a,b) (c,d)
+                                      ))
+  Parallelogram (x1,y1) (x2,y2) (x3,y3) -> solidPolygon [(x1,y1),(x3,y3),(x2,y2),(x1+x2-x3,y1+y2-y3)]
 
 
 -- TODO
@@ -91,6 +97,6 @@ help_func (a1,b1) (a2,b2) (m1,m2) = rotated 1 (translated m1 m2 (solidPolygon [(
 
 ellipse :: (Double, Double) -> (Double, Double) -> Picture
 ellipse (a,b) (c,d) = if (c-a) > (d-b) then
-                      scaled ((c-a)/(d-b)) 1.0 (circle (d-b))
+                      scaled ((c-a)/(d-b)) 1.0 (solidCircle ((d-b)/2))
                     else
-                      scaled  1.0 ((d-b)/(c-a)) (circle (c-a))
+                      scaled  1.0 ((d-b)/(c-a)) (solidCircle ((c-a)/2))
