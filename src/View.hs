@@ -49,20 +49,48 @@ toolToLabel tool = case tool of
 
 -- TODO
 colourShapesToPicture :: [ColourShape] -> Picture
-colourShapesToPicture = undefined
+colourShapesToPicture a = case a of
+  [x]  -> colourShapeToPicture x
+  x:xs ->  (colourShapeToPicture x & colourShapesToPicture xs)
+  []  -> error "in function colourShapesToPicture: Empty List given"
 
 -- TODO
 colourShapeToPicture :: ColourShape -> Picture
-colourShapeToPicture = undefined
+colourShapeToPicture (colourname, shape)= coloured (colourNameToColour colourname) (shapeToPicture shape)
 
 -- TODO
 colourNameToColour :: ColourName -> Colour
-colourNameToColour = undefined
+colourNameToColour colourname = case colourname of
+  Black -> black
+  Red -> red
+  Orange -> orange
+  Yellow -> yellow
+  Green -> green
+  Blue -> blue
+  Purple -> purple
+
+
 
 -- TODO
 shapeToPicture :: Shape -> Picture
-shapeToPicture = undefined
+shapeToPicture shape = case shape of
+  Line a b -> polyline [a,b]
+  Polygon a -> solidPolygon a
+  Circle (a,b) (c,d) -> translated a b (solidCircle (sqrt ( (a-c)^2 + (b-d)^2 )))
+  Rectangle (a,b) (c,d) rec_ang -> rotated rec_ang (translated ((a+c)/2) ((b+d)/2) (rectangle (abs (c-a))  (abs (d-b))))
+  Ellipse (a,b) (c,d) ell_ang -> rotated ell_ang (translated ((a+c)/2) ((b+d)/2)  (ellipse (a,b) (c,d)))
+  Parallelogram (x1,y1) (x2,y2) (x3,y3) -> polyline [(x1,y1),(x3,y3),(x2,y2),(x1+x2-x3,y1+y2-y3)]
+
 
 -- TODO
 areaShapes :: [Shape] -> Tool -> Double
 areaShapes = undefined
+
+help_func :: Point -> Point -> Point -> Picture
+help_func (a1,b1) (a2,b2) (m1,m2) = rotated 1 (translated m1 m2 (solidPolygon [(a1,b1),(a1,b2),(a2,b2),(a2,b1)]))
+
+ellipse :: (Double, Double) -> (Double, Double) -> Picture
+ellipse (a,b) (c,d) = if (c-a) > (d-b) then
+                      scaled ((c-a)/(d-b)) 1.0 (circle (d-b))
+                    else
+                      scaled  1.0 ((d-b)/(c-a)) (circle (c-a))
