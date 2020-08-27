@@ -54,7 +54,7 @@ colourShapesToPicture a = case a of
   x:xs ->  (colourShapeToPicture x & colourShapesToPicture xs)
   []  -> error "in function colourShapesToPicture: Empty List given"
 
--- TODO
+-- TODOw
 colourShapeToPicture :: ColourShape -> Picture
 colourShapeToPicture (colourname, shape)= coloured (colourNameToColour colourname) (shapeToPicture shape)
 
@@ -76,7 +76,7 @@ shapeToPicture :: Shape -> Picture
 shapeToPicture shape = case shape of
   Line a b -> polyline [a,b]
   Polygon a -> solidPolygon a
-  Circle (a,b) (c,d) -> translated a b (solidCircle (sqrt ( (a-c)^2 + (b-d)^2 )))
+  Circle (a,b) (c,d) -> translated a b (solidCircle (sqrt ( (a-c)^(2 :: Integer) + (b-d)^(2 :: Integer) )))
   Rectangle (a,b) (c,d) rec_ang -> translated ((a+c)/2) ((b+d)/2) (
                                    rotated rec_ang (
                                        solidRectangle (abs (c-a))  (abs (d-b))
@@ -90,10 +90,7 @@ shapeToPicture shape = case shape of
 
 -- TODO
 areaShapes :: [Shape] -> Tool -> Double
-areaShapes = undefined
-
-help_func :: Point -> Point -> Point -> Picture
-help_func (a1,b1) (a2,b2) (m1,m2) = rotated 1 (translated m1 m2 (solidPolygon [(a1,b1),(a1,b2),(a2,b2),(a2,b1)]))
+areaShapes _ _ = 0
 
 ellipse :: (Double, Double) -> (Double, Double) -> Picture
 ellipse (a,b) (c,d) = if (c-a) > (d-b) then

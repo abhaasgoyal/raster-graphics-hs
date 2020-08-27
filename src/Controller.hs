@@ -21,13 +21,15 @@ handleEvent event m@(Model ss t c) =
       -- display the mystery image
       | k == "M" -> Model mystery t c
 
-      | k == "Backspace" || k == "Delete" -> undefined  -- TODO: drop the last added shape
+      | k == "Backspace" || k == "Delete" -> Model (init ss) t c  -- TODO: drop the last added shape
 
-      | k == " " -> undefined  -- TODO: finish polygon vertices
+      | k == " " -> undefined -- case t of
+          -- PolygonTool x:y:z:xs -> Model ((c, Polygon x:y:z:xs):ss) (PolygonTool []) c
+          -- _ -> m
 
-      | k == "T" -> undefined  -- TODO: switch tool
+      | k == "T" -> Model ss (nextTool t) c  -- TODO: switch tool
 
-      | k == "C" -> undefined  -- TODO: switch colour
+      | k == "C" -> Model ss t (nextColour c)  -- TODO: switch colour
 
       | k == "Left" -> undefined  -- TODO: rotate anticlockwise
 
@@ -38,7 +40,7 @@ handleEvent event m@(Model ss t c) =
       where
         k = unpack key
 
-    PointerPress p -> undefined  -- TODO
+    PointerPress p -> undefined   -- TODO
 
     PointerRelease p -> undefined  -- TODO
     _ -> m
@@ -53,7 +55,6 @@ nextColour color = case color of
   Green -> Blue
   Blue -> Purple
   Purple -> Black
-  _ -> color
 
 -- TODO
 nextTool :: Tool -> Tool
