@@ -52,7 +52,7 @@ colourShapesToPicture :: [ColourShape] -> Picture
 colourShapesToPicture a = case a of
   [x]  -> colourShapeToPicture x
   x:xs ->  (colourShapeToPicture x & colourShapesToPicture xs)
-  []  -> error "in function colourShapesToPicture: Empty List given"
+  []  -> coordinatePlane
 
 -- TODOw
 colourShapeToPicture :: ColourShape -> Picture

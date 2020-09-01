@@ -23,9 +23,9 @@ handleEvent event m@(Model ss t c) =
 
       | k == "Backspace" || k == "Delete" -> Model (init ss) t c  -- TODO: drop the last added shape
 
-      | k == " " -> undefined -- case t of
-          -- PolygonTool x:y:z:xs -> Model ((c, Polygon x:y:z:xs):ss) (PolygonTool []) c
-          -- _ -> m
+      | k == " " -> case t of
+          PolygonTool  (x:y:z:xs) -> Model ((c, Polygon  (x:y:z:xs)):ss) (PolygonTool []) c
+          _ -> m
 
       | k == "T" -> Model ss (nextTool t) c  -- TODO: switch tool
 
@@ -40,9 +40,23 @@ handleEvent event m@(Model ss t c) =
       where
         k = unpack key
 
-    PointerPress p -> undefined   -- TODO
+    PointerPress p -> case t of
+      LineTool Nothing -> Model ss (LineTool (Just p)) c
+      PolygonTool xs -> Model ss (PolygonTool (p:xs)) c
+      RectangleTool Nothing -> Model ss (RectangleTool (Just p)) c
+      CircleTool Nothing -> Model ss (CircleTool (Just p)) c
+      EllipseTool Nothing -> Model ss (EllipseTool (Just p)) c
+      ParallelogramTool Nothing _ -> Model ss (ParallelogramTool (Just p) Nothing) c
+      ParallelogramTool (Just p') Nothing -> Model ss (ParallelogramTool (Just p') (Just p)) c
+      ParallelogramTool (Just p') (Just q') -> Model ((c, Parallelogram p' q' p):ss) (ParallelogramTool Nothing Nothing) c
+      _ -> m
 
-    PointerRelease p -> undefined  -- TODO
+    PointerRelease p -> case t of
+      LineTool (Just q) -> Model ((c, Line p q):ss) (LineTool Nothing) c
+      RectangleTool (Just q) -> Model ((c, Rectangle p q 0.0):ss) (RectangleTool Nothing) c
+      CircleTool (Just q) -> Model ((c, Circle q p):ss)  (CircleTool Nothing) c
+      EllipseTool (Just q) -> Model ((c, Ellipse p q 0.0):ss)  (EllipseTool Nothing) c
+      _ -> m
     _ -> m
 
 -- TODO
