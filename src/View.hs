@@ -76,7 +76,7 @@ shapeToPicture :: Shape -> Picture
 shapeToPicture shape = case shape of
   Line a b -> polyline [a,b]
   Polygon a -> solidPolygon a
-  Circle (a,b) (c,d) -> translated a b (solidCircle (sqrt ( (a-c)^(2 :: Integer) + (b-d)^(2 :: Integer) )))
+  Circle (a,b) (c,d) -> translated a b (solidCircle (radius (a,b) (c,d)))
   Rectangle (a,b) (c,d) rec_ang -> translated ((a+c)/2) ((b+d)/2) (
                                    rotated rec_ang (
                                        solidRectangle (abs (c-a))  (abs (d-b))
@@ -87,13 +87,53 @@ shapeToPicture shape = case shape of
                                       ))
   Parallelogram (x1,y1) (x2,y2) (x3,y3) -> solidPolygon [(x1,y1),(x3,y3),(x2,y2),(x1+x2-x3,y1+y2-y3)]
 
+fromDegrees :: Floating a => a -> a
+fromDegrees deg = deg * pi / 180
+
+toDegrees :: Floating a => a -> a
+toDegrees rad = rad * 180 / pi
 
 -- TODO
 areaShapes :: [Shape] -> Tool -> Double
-areaShapes _ _ = 0
+areaShapes a b = case b of
+  (LineTool _) -> 0
+  (PolygonTool _) -> 0
+  (RectangleTool _) -> case a of
+                         (Rectangle (x1,y1) (x2,y2) theta):_ -> (
+                           abs ((x2 -x1)* (sin theta) + (y2 -y1)* (cos theta)) *
+                           abs ((x2 -x1)* (cos theta) + (y2 -y1)* (sin theta))
+                           ) + (areaShapes (tail a) b)
+                         [] -> 0.0
+                         _ -> (areaShapes (tail a) b)
+  (CircleTool _) -> case a of
+                         (Circle x y):_ -> (pi * (radius x y)^(2 :: Integer)) +
+                           (areaShapes (tail a) b)
+
+                         [] -> 0.0
+                         _ -> (areaShapes (tail a) b)
+  (EllipseTool _) -> case a of
+                         (Ellipse (x1,y1) (x2,y2) theta):_ -> (
+                           pi *
+                           abs (((x2 -x1)/2)* (sin theta)
+                                + ((y2 -y1)/2)* (cos theta)) *
+                           abs (((x2 -x1)/2)* (cos theta)
+                                + ((y2 -y1)/2)* (sin theta))
+                           ) + (areaShapes (tail a) b)
+
+                         [] -> 0.0
+                         _ -> (areaShapes (tail a) b)
+  (ParallelogramTool _ _) -> case a of
+                               (Parallelogram (x1,y1) (x2,y2) (x3,y3)):_ ->
+                                 abs (( x1*y2 + x2*y3 + x3*y1) - (x1*y3 + x3*y2 + x2*y1))
+                                 + (areaShapes (tail a) b)
+                               [] -> 0.0
+                               _ -> (areaShapes (tail a) b)
 
 ellipse :: (Double, Double) -> (Double, Double) -> Picture
 ellipse (a,b) (c,d) = if (c-a) > (d-b) then
                       scaled ((c-a)/(d-b)) 1.0 (solidCircle ((d-b)/2))
                     else
                       scaled  1.0 ((d-b)/(c-a)) (solidCircle ((c-a)/2))
+
+radius :: Point -> Point -> Double
+radius (a,b) (c,d) = sqrt ( (a-c)^(2 :: Integer) + (b-d)^(2 :: Integer) )

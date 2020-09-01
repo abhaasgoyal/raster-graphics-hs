@@ -30,11 +30,16 @@ handleEvent event m@(Model ss t c) =
       | k == "T" -> Model ss (nextTool t) c  -- TODO: switch tool
 
       | k == "C" -> Model ss t (nextColour c)  -- TODO: switch colour
+      -- TODO: FIX CONVERSION
+      | k == "Left" -> case (head ss) of
+          (_, Rectangle p q x) -> Model ((c, Rectangle p q (x+(1/180*pi))):(tail ss)) t c
+          (_, Ellipse p q x) -> Model ((c, Ellipse p q (x+(1/180*pi))):(tail ss)) t c
+          _ -> m
 
-      | k == "Left" -> undefined  -- TODO: rotate anticlockwise
-
-      | k == "Right" -> undefined  -- TODO: rotate clockwise
-
+      | k == "Right" -> case (head ss) of
+          (_, Rectangle p q x) -> Model ((c, Rectangle p q (x-(1/180*pi) )):(tail ss)) t c
+          (_, Ellipse p q x) -> Model ((c, Ellipse p q (x-(1/180*pi))):(tail ss)) t c
+          _ -> m
       -- ignore other events
       | otherwise -> m
       where
