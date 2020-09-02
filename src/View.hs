@@ -114,8 +114,10 @@ areaShapes :: [Shape] -> Tool -> Double
 areaShapes a b = case b of
   (LineTool _) -> 0
   (PolygonTool _) -> case a of
-                       (Polygon points):_ -> (1/2.0) * (abs (areaPolygon points)
-                                                        + det (last points)(head points) )
+                       (Polygon points):_ -> (1/2.0)
+                                             * (abs ((areaPolygon points)
+                                                   + det (last points)(head points)))
+                                             + (areaShapes (tail a) b)
                        [] -> 0.0
                        _ -> (areaShapes (tail a) b)
   (RectangleTool _) -> case a of
