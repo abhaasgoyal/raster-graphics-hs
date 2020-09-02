@@ -26,6 +26,8 @@ areaToLabel :: [ColourShape] -> Tool -> String
 areaToLabel css t = case t of
   RectangleTool _       -> "The total area of the rectangles is "
                            ++ (show $ areaShapes ss t) ++ " units."
+  PolygonTool _       -> "The total area of the polygons is "
+                           ++ (show $ areaShapes ss t) ++ " units."
   CircleTool _          -> "The total area of the circles is "
                            ++ (show $ areaShapes ss t) ++ " units."
   EllipseTool _         -> "The total area of the ellipses is "
@@ -36,7 +38,7 @@ areaToLabel css t = case t of
   where ss = map snd css
 
 
--- TODO
+-- | Given a tool, give instructions to the user
 toolToLabel :: Tool -> String
 toolToLabel tool = case tool of
   LineTool _ -> "Line... click-drag-release"
@@ -47,18 +49,18 @@ toolToLabel tool = case tool of
   ParallelogramTool _ _ -> "Parallelogram... click two opposite vertices, then a third"
 
 
--- TODO
+-- | Given a set of coloured shapes convert to picture
 colourShapesToPicture :: [ColourShape] -> Picture
 colourShapesToPicture a = case a of
   [x]  -> colourShapeToPicture x
   x:xs ->  (colourShapeToPicture x & colourShapesToPicture xs)
   []  -> coordinatePlane
 
--- TODOw
+-- | Given a colour and shape convert to a coloured picture
 colourShapeToPicture :: ColourShape -> Picture
 colourShapeToPicture (colourname, shape)= coloured (colourNameToColour colourname) (shapeToPicture shape)
 
--- TODO
+-- | Convert user defined colourname to Colours of codeworld specification
 colourNameToColour :: ColourName -> Colour
 colourNameToColour colourname = case colourname of
   Black -> black
@@ -71,7 +73,7 @@ colourNameToColour colourname = case colourname of
 
 
 
--- TODO
+-- | Calculates the dimensions of shape and converts it into picture
 shapeToPicture :: Shape -> Picture
 shapeToPicture shape = case shape of
   Line a b -> polyline [a,b]
@@ -87,17 +89,35 @@ shapeToPicture shape = case shape of
                                       ))
   Parallelogram (x1,y1) (x2,y2) (x3,y3) -> solidPolygon [(x1,y1),(x3,y3),(x2,y2),(x1+x2-x3,y1+y2-y3)]
 
-fromDegrees :: Floating a => a -> a
-fromDegrees deg = deg * pi / 180
+-- | Helper function to draw ellipse
+ellipse :: (Double, Double) -> (Double, Double) -> Picture
+ellipse (a,b) (c,d) = if (c-a) > (d-b) then
+                      scaled ((c-a)/(d-b)) 1.0 (solidCircle ((d-b)/2))
+                    else
+                      scaled  1.0 ((d-b)/(c-a)) (solidCircle ((c-a)/2))
 
-toDegrees :: Floating a => a -> a
-toDegrees rad = rad * 180 / pi
+-- | Helper function to draw circle
+radius :: Point -> Point -> Double
+radius (a,b) (c,d) = sqrt ( (a-c)^(2 :: Integer) + (b-d)^(2 :: Integer))
 
--- TODO
+
+areaPolygon :: [Point] -> Double
+areaPolygon list = case list of
+  x:y:xs -> (det x y) + areaPolygon (y:xs)
+  [_] -> 0
+  _ -> 0
+det :: Point -> Point -> Double
+det (x1,y1) (x2, y2) = x1 * y2 - x2 * y1
+
+-- | Calculates areas of Shapes with respect to the current tool
 areaShapes :: [Shape] -> Tool -> Double
 areaShapes a b = case b of
   (LineTool _) -> 0
-  (PolygonTool _) -> 0
+  (PolygonTool _) -> case a of
+                       (Polygon points):_ -> (1/2.0) * (abs (areaPolygon points)
+                                                        + det (last points)(head points) )
+                       [] -> 0.0
+                       _ -> (areaShapes (tail a) b)
   (RectangleTool _) -> case a of
                          (Rectangle (x1,y1) (x2,y2) _):_ -> abs ((x2 -x1) *(y2-y1))
                                                             + (areaShapes (tail a) b)
@@ -121,12 +141,3 @@ areaShapes a b = case b of
                                  + (areaShapes (tail a) b)
                                [] -> 0.0
                                _ -> (areaShapes (tail a) b)
-
-ellipse :: (Double, Double) -> (Double, Double) -> Picture
-ellipse (a,b) (c,d) = if (c-a) > (d-b) then
-                      scaled ((c-a)/(d-b)) 1.0 (solidCircle ((d-b)/2))
-                    else
-                      scaled  1.0 ((d-b)/(c-a)) (solidCircle ((c-a)/2))
-
-radius :: Point -> Point -> Double
-radius (a,b) (c,d) = sqrt ( (a-c)^(2 :: Integer) + (b-d)^(2 :: Integer) )
