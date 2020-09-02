@@ -21,8 +21,9 @@ handleEvent event m@(Model ss t c) =
       -- display the mystery image
       | k == "M" -> Model mystery t c
 
-      | k == "Backspace" || k == "Delete" -> Model (init ss) t c  -- TODO: drop the last added shape
-
+      | k == "Backspace" || k == "Delete" -> case ss of
+                                             [] -> m
+                                             _  -> Model (init ss) t c
       | k == " " -> case t of
           PolygonTool  (x:y:z:xs) -> Model ((c, Polygon  (x:y:z:xs)):ss) (PolygonTool []) c
           _ -> m

@@ -99,10 +99,8 @@ areaShapes a b = case b of
   (LineTool _) -> 0
   (PolygonTool _) -> 0
   (RectangleTool _) -> case a of
-                         (Rectangle (x1,y1) (x2,y2) theta):_ -> (
-                           abs ((x2 -x1)* (sin theta) + (y2 -y1)* (cos theta)) *
-                           abs ((x2 -x1)* (cos theta) + (y2 -y1)* (sin theta))
-                           ) + (areaShapes (tail a) b)
+                         (Rectangle (x1,y1) (x2,y2) _):_ -> abs ((x2 -x1) *(y2-y1))
+                                                            + (areaShapes (tail a) b)
                          [] -> 0.0
                          _ -> (areaShapes (tail a) b)
   (CircleTool _) -> case a of
@@ -112,13 +110,8 @@ areaShapes a b = case b of
                          [] -> 0.0
                          _ -> (areaShapes (tail a) b)
   (EllipseTool _) -> case a of
-                         (Ellipse (x1,y1) (x2,y2) theta):_ -> (
-                           pi *
-                           abs (((x2 -x1)/2)* (sin theta)
-                                + ((y2 -y1)/2)* (cos theta)) *
-                           abs (((x2 -x1)/2)* (cos theta)
-                                + ((y2 -y1)/2)* (sin theta))
-                           ) + (areaShapes (tail a) b)
+                         (Ellipse (x1,y1) (x2,y2) _):_ -> abs ( pi * (x2 -x1)/2  * (y2 -y1)/2 )
+                                                          + (areaShapes (tail a) b)
 
                          [] -> 0.0
                          _ -> (areaShapes (tail a) b)
