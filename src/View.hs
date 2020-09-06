@@ -54,7 +54,7 @@ colourShapesToPicture :: [ColourShape] -> Picture
 colourShapesToPicture a = case a of
   [x]  -> colourShapeToPicture x
   x:xs ->  (colourShapeToPicture x & colourShapesToPicture xs)
-  []  -> coordinatePlane
+  []  -> mempty
 
 -- | Given a colour and shape convert to a coloured picture
 colourShapeToPicture :: ColourShape -> Picture
@@ -91,10 +91,12 @@ shapeToPicture shape = case shape of
 
 -- | Helper function to draw ellipse
 ellipse :: (Double, Double) -> (Double, Double) -> Picture
-ellipse (a,b) (c,d) = if (c-a) > (d-b) then
-                      scaled ((c-a)/(d-b)) 1.0 (solidCircle ((d-b)/2))
-                    else
-                      scaled  1.0 ((d-b)/(c-a)) (solidCircle ((c-a)/2))
+ellipse (a,b) (c,d) =if ((c-a) == 0 || (d-b) == 0) then
+                       solidCircle 0
+                     else if (c-a) > (d-b) then
+                            scaled (abs((c-a)/(d-b))) 1.0 (solidCircle ((d-b)/2))
+                          else
+                            scaled  1.0 (abs((d-b)/(c-a))) (solidCircle ((c-a)/2))
 
 -- | Helper function to draw circle
 radius :: Point -> Point -> Double
@@ -108,6 +110,21 @@ areaPolygon list = case list of
   _ -> 0
 det :: Point -> Point -> Double
 det (x1,y1) (x2, y2) = x1 * y2 - x2 * y1
+
+-- | Tests
+-- >>> areaShapes[Line (1.0,1.0) (2.0,2.0)] (LineTool Nothing)
+-- 0.0
+-- >>> areaShapes [Polygon [(3,4),(5,11),(12,8),(9,5),(5,6)]] (PolygonTool [])
+-- 30.0
+-- >>> areaShapes[Rectangle (0.0,0.0) (2.0,4.0) 0.0 , Rectangle (5.0,5.0) (10.0,10.0) 0.0  ] (RectangleTool Nothing)
+-- 33.0
+-- >>> areaShapes[Circle (0.0,0.0) (0.0,2.0)] (CircleTool Nothing)
+-- 12.566370614359172
+-- >>> areaShapes[Ellipse (0.0,0.0) (7.0,2.0) 0.0] (EllipseTool Nothing)
+-- 10.995574287564276
+-- >>> areaShapes[Parallelogram (0.0,0.0) (10.0,5.0) (5.0,0.0)] (ParallelogramTool Nothing Nothing)
+-- 25.0
+
 
 -- | Calculates areas of Shapes with respect to the current tool
 areaShapes :: [Shape] -> Tool -> Double
