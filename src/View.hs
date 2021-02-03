@@ -51,14 +51,13 @@ toolToLabel tool = case tool of
 
 -- | Given a set of coloured shapes convert to picture
 colourShapesToPicture :: [ColourShape] -> Picture
-colourShapesToPicture a = case a of
-  [x]  -> colourShapeToPicture x
-  x:xs ->  (colourShapeToPicture x & colourShapesToPicture xs)
-  []  -> mempty
+colourShapesToPicture = foldl (\x y -> x  & colourShapeToPicture y) mempty
 
 -- | Given a colour and shape convert to a coloured picture
 colourShapeToPicture :: ColourShape -> Picture
-colourShapeToPicture (colourname, shape)= coloured (colourNameToColour colourname) (shapeToPicture shape)
+colourShapeToPicture (colourname, shape )= coloured
+                                           (colourNameToColour colourname)
+                                           (shapeToPicture shape)
 
 -- | Convert user defined colourname to Colours of codeworld specification
 colourNameToColour :: ColourName -> Colour
@@ -70,8 +69,6 @@ colourNameToColour colourname = case colourname of
   Green -> green
   Blue -> blue
   Purple -> purple
-
-
 
 -- | Calculates the dimensions of shape and converts it into picture
 shapeToPicture :: Shape -> Picture
@@ -91,7 +88,7 @@ shapeToPicture shape = case shape of
 
 -- | Helper function to draw ellipse
 ellipse :: (Double, Double) -> (Double, Double) -> Picture
-ellipse (a,b) (c,d) =if ((c-a) == 0 || (d-b) == 0) then
+ellipse (a,b) (c,d) =if (c-a) == 0 || (d-b) == 0 then
                        solidCircle 0
                      else if (c-a) > (d-b) then
                             scaled (abs((c-a)/(d-b))) 1.0 (solidCircle ((d-b)/2))
@@ -100,16 +97,7 @@ ellipse (a,b) (c,d) =if ((c-a) == 0 || (d-b) == 0) then
 
 -- | Helper function to draw circle
 radius :: Point -> Point -> Double
-radius (a,b) (c,d) = sqrt ( (a-c)^(2 :: Integer) + (b-d)^(2 :: Integer))
-
-
-areaPolygon :: [Point] -> Double
-areaPolygon list = case list of
-  x:y:xs -> (det x y) + areaPolygon (y:xs)
-  [_] -> 0
-  _ -> 0
-det :: Point -> Point -> Double
-det (x1,y1) (x2, y2) = x1 * y2 - x2 * y1
+radius (a,b) (c,d) = sqrt $ (a - c)**2 + (b - d)**2
 
 -- | Tests
 -- >>> areaShapes[Line (1.0,1.0) (2.0,2.0)] (LineTool Nothing)
@@ -128,35 +116,29 @@ det (x1,y1) (x2, y2) = x1 * y2 - x2 * y1
 
 -- | Calculates areas of Shapes with respect to the current tool
 areaShapes :: [Shape] -> Tool -> Double
-areaShapes a b = case b of
-  (LineTool _) -> 0
-  (PolygonTool _) -> case a of
-                       (Polygon points):_ -> (1/2.0)
-                                             * (abs ((areaPolygon points)
-                                                   + det (last points)(head points)))
-                                             + (areaShapes (tail a) b)
-                       [] -> 0.0
-                       _ -> (areaShapes (tail a) b)
-  (RectangleTool _) -> case a of
-                         (Rectangle (x1,y1) (x2,y2) _):_ -> abs ((x2 -x1) *(y2-y1))
-                                                            + (areaShapes (tail a) b)
-                         [] -> 0.0
-                         _ -> (areaShapes (tail a) b)
-  (CircleTool _) -> case a of
-                         (Circle x y):_ -> (pi * (radius x y)^(2 :: Integer)) +
-                           (areaShapes (tail a) b)
+areaShapes a b = sum $ map helpArea filteredShapeList
+  where
+    filteredShapeList :: [Shape]
+    filteredShapeList = case b of
+                          (LineTool _) -> [x | x@Line {} <- a]
+                          (PolygonTool _) -> [x | x@Polygon {} <- a]
+                          (RectangleTool _) -> [x | x@Rectangle {} <- a]
+                          (CircleTool _) -> [x | x@Circle {} <- a]
+                          (EllipseTool _) -> [x | x@Ellipse {} <- a]
+                          (ParallelogramTool _ _) -> [x | x@Parallelogram {} <- a]
 
-                         [] -> 0.0
-                         _ -> (areaShapes (tail a) b)
-  (EllipseTool _) -> case a of
-                         (Ellipse (x1,y1) (x2,y2) _):_ -> abs ( pi * (x2 -x1)/2  * (y2 -y1)/2 )
-                                                          + (areaShapes (tail a) b)
+det :: Point -> Point -> Double
+det (x1,y1) (x2, y2) = x1 * y2 - x2 * y1
 
-                         [] -> 0.0
-                         _ -> (areaShapes (tail a) b)
-  (ParallelogramTool _ _) -> case a of
-                               (Parallelogram (x1,y1) (x2,y2) (x3,y3)):_ ->
-                                 abs (( x1*y2 + x2*y3 + x3*y1) - (x1*y3 + x3*y2 + x2*y1))
-                                 + (areaShapes (tail a) b)
-                               [] -> 0.0
-                               _ -> (areaShapes (tail a) b)
+zipAdjElem :: [a] -> [(a,a)]
+zipAdjElem [] = []
+zipAdjElem (x:xs) = zip (x:xs) (xs ++[x])
+
+helpArea :: Shape -> Double
+helpArea shape = case shape of
+  Line _ _ -> 0
+  Rectangle (x1, y1) (x2, y2) _ -> abs $ (x2 - x1) * (y2 - y1)
+  Polygon points -> sum $ map (abs . uncurry det) (zipAdjElem points)
+  Circle x y -> pi * radius x y **2.0
+  Ellipse (x1, y1) (x2, y2) _ -> abs $ pi * (x2 - x1) * (y2 - y1) / 4
+  Parallelogram a b c -> abs $ det a b + det b c + det c a
