@@ -24,18 +24,12 @@ modelToPicture (Model ss t c)
    of all the shapes matching the current tool. -}
 areaToLabel :: [ColourShape] -> Tool -> String
 areaToLabel css t = case t of
-  RectangleTool _       -> "The total area of the rectangles is "
-                           ++ (show $ areaShapes ss t) ++ " units."
-  PolygonTool _       -> "The total area of the polygons is "
-                           ++ (show $ areaShapes ss t) ++ " units."
-  CircleTool _          -> "The total area of the circles is "
-                           ++ (show $ areaShapes ss t) ++ " units."
-  EllipseTool _         -> "The total area of the ellipses is "
-                           ++ (show $ areaShapes ss t) ++ " units."
-  ParallelogramTool _ _ -> "The total area of the parallelograms is "
-                          ++ (show $ areaShapes ss t) ++ " units."
-  _                     -> []
-  where ss = map snd css
+  LineTool _            -> ""
+  _                     -> "The total area of the " ++ snd totalAreaShape ++
+                           " is " ++ show (fst totalAreaShape) ++ " units."
+  where
+        totalAreaShape :: (Double, String)
+        totalAreaShape = areaShapes (map snd css) t
 
 
 -- | Given a tool, give instructions to the user
@@ -51,13 +45,13 @@ toolToLabel tool = case tool of
 
 -- | Given a set of coloured shapes convert to picture
 colourShapesToPicture :: [ColourShape] -> Picture
-colourShapesToPicture = foldl (\x y -> x  & colourShapeToPicture y) mempty
+colourShapesToPicture = pictures . map colourShapeToPicture
 
 -- | Given a colour and shape convert to a coloured picture
 colourShapeToPicture :: ColourShape -> Picture
-colourShapeToPicture (colourname, shape )= coloured
-                                           (colourNameToColour colourname)
-                                           (shapeToPicture shape)
+colourShapeToPicture (colourname, shape) = coloured
+                                            (colourNameToColour colourname)
+                                            (shapeToPicture shape)
 
 -- | Convert user defined colourname to Colours of codeworld specification
 colourNameToColour :: ColourName -> Colour
@@ -76,15 +70,22 @@ shapeToPicture shape = case shape of
   Line a b -> polyline [a,b]
   Polygon a -> solidPolygon a
   Circle (a,b) (c,d) -> translated a b (solidCircle (radius (a,b) (c,d)))
-  Rectangle (a,b) (c,d) rec_ang -> translated ((a+c)/2) ((b+d)/2) (
-                                   rotated rec_ang (
-                                       solidRectangle (abs (c-a))  (abs (d-b))
-                                   ))
-  Ellipse (a,b) (c,d) ell_ang -> translated ((a+c)/2) ((b+d)/2) (
-                                  rotated ell_ang (
-                                      ellipse (a,b) (c,d)
-                                      ))
-  Parallelogram (x1,y1) (x2,y2) (x3,y3) -> solidPolygon [(x1,y1),(x3,y3),(x2,y2),(x1+x2-x3,y1+y2-y3)]
+  Rectangle (a,b) (c,d) rec_ang -> translated
+                                   ((a+c)/2)
+                                   ((b+d)/2)
+                                   (rotated rec_ang
+                                       (solidRectangle
+                                        (abs (c-a))
+                                        (abs (d-b))))
+  Ellipse (a,b) (c,d) ell_ang -> translated
+                                 ((a+c)/2)
+                                 ((b+d)/2)
+                                 (rotated ell_ang
+                                      (ellipse (a,b) (c,d)))
+  Parallelogram (x1,y1) (x2,y2) (x3,y3) -> solidPolygon [(x1,y1),
+                                                         (x3,y3),
+                                                         (x2,y2),
+                                                         (x1+x2-x3,y1+y2-y3)]
 
 -- | Helper function to draw ellipse
 ellipse :: (Double, Double) -> (Double, Double) -> Picture
@@ -115,17 +116,18 @@ radius (a,b) (c,d) = sqrt $ (a - c)**2 + (b - d)**2
 
 
 -- | Calculates areas of Shapes with respect to the current tool
-areaShapes :: [Shape] -> Tool -> Double
-areaShapes a b = sum $ map helpArea filteredShapeList
+areaShapes :: [Shape] -> Tool -> (Double, String)
+areaShapes a b = (sum $ map helpArea (fst filteredShapeList), snd filteredShapeList)
   where
-    filteredShapeList :: [Shape]
+    filteredShapeList :: ([Shape], String)
     filteredShapeList = case b of
-                          (LineTool _) -> [x | x@Line {} <- a]
-                          (PolygonTool _) -> [x | x@Polygon {} <- a]
-                          (RectangleTool _) -> [x | x@Rectangle {} <- a]
-                          (CircleTool _) -> [x | x@Circle {} <- a]
-                          (EllipseTool _) -> [x | x@Ellipse {} <- a]
-                          (ParallelogramTool _ _) -> [x | x@Parallelogram {} <- a]
+                          (LineTool _) -> ([x | x@Line {} <- a], "line")
+                          (PolygonTool _) -> ([x | x@Polygon {} <- a], "polygons")
+                          (RectangleTool _) -> ([x | x@Rectangle {} <- a], "rectangles")
+                          (CircleTool _) -> ([x | x@Circle {} <- a], "circles")
+                          (EllipseTool _) -> ([x | x@Ellipse {} <- a], "ellipses")
+                          (ParallelogramTool _ _) -> ([x | x@Parallelogram {} <- a],
+                                                      "parallelograms")
 
 det :: Point -> Point -> Double
 det (x1,y1) (x2, y2) = x1 * y2 - x2 * y1
@@ -138,7 +140,7 @@ helpArea :: Shape -> Double
 helpArea shape = case shape of
   Line _ _ -> 0
   Rectangle (x1, y1) (x2, y2) _ -> abs $ (x2 - x1) * (y2 - y1)
-  Polygon points -> sum $ map (abs . uncurry det) (zipAdjElem points)
+  Polygon points -> abs . (*0.5) . sum $ map (uncurry det) (zipAdjElem points)
   Circle x y -> pi * radius x y **2.0
   Ellipse (x1, y1) (x2, y2) _ -> abs $ pi * (x2 - x1) * (y2 - y1) / 4
   Parallelogram a b c -> abs $ det a b + det b c + det c a

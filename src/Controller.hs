@@ -23,23 +23,23 @@ handleEvent event m@(Model ss t c) =
 
       | k == "Backspace" || k == "Delete" -> case ss of
                                              [] -> m
-                                             _  -> Model (init ss) t c
+                                             _  -> Model (tail ss) t c
       | k == " " -> case t of
-          PolygonTool  (x:y:z:xs) -> Model ((c, Polygon  (x:y:z:xs)):ss) (PolygonTool []) c
+          PolygonTool p@(_:_:_:_) -> Model ((c, Polygon  p):ss) (PolygonTool []) c
           _ -> m
 
       | k == "T" -> Model ss (nextTool t) c  -- TODO: switch tool
 
       | k == "C" -> Model ss t (nextColour c)  -- TODO: switch colour
       -- TODO: FIX CONVERSION
-      | k == "Left" -> case (head ss) of
-          (_, Rectangle p q x) -> Model ((c, Rectangle p q (x+(1/180*pi))):(tail ss)) t c
-          (_, Ellipse p q x) -> Model ((c, Ellipse p q (x+(1/180*pi))):(tail ss)) t c
+      | k == "Left" -> case head ss of
+          (oldC, Rectangle p q x) -> Model ((oldC, Rectangle p q (x+(1/180*pi))):tail ss) t c
+          (oldC, Ellipse p q x) -> Model ((oldC, Ellipse p q (x+(1/180*pi))):tail ss) t c
           _ -> m
 
-      | k == "Right" -> case (head ss) of
-          (_, Rectangle p q x) -> Model ((c, Rectangle p q (x-(1/180*pi) )):(tail ss)) t c
-          (_, Ellipse p q x) -> Model ((c, Ellipse p q (x-(1/180*pi))):(tail ss)) t c
+      | k == "Right" -> case head ss of
+          (oldC, Rectangle p q x) -> Model ((oldC, Rectangle p q (x-(1/180*pi) )):tail ss) t c
+          (oldC, Ellipse p q x) -> Model ((oldC, Ellipse p q (x-(1/180*pi))):tail ss) t c
           _ -> m
       -- ignore other events
       | otherwise -> m
@@ -54,7 +54,8 @@ handleEvent event m@(Model ss t c) =
       EllipseTool Nothing -> Model ss (EllipseTool (Just p)) c
       ParallelogramTool Nothing _ -> Model ss (ParallelogramTool (Just p) Nothing) c
       ParallelogramTool (Just p') Nothing -> Model ss (ParallelogramTool (Just p') (Just p)) c
-      ParallelogramTool (Just p') (Just q') -> Model ((c, Parallelogram p' q' p):ss) (ParallelogramTool Nothing Nothing) c
+      ParallelogramTool (Just p') (Just q') -> Model ((c, Parallelogram p' q' p):ss)
+                                               (ParallelogramTool Nothing Nothing) c
       _ -> m
 
     PointerRelease p -> case t of
